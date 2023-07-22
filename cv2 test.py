@@ -22,6 +22,24 @@ print(serial.to_bytes(value))
 def nil(self):
     pass
 
+def dropTrophy():
+    value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
+    ser.write(serial.to_bytes(value))
+
+    time.sleep(2)
+
+    value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
+    ser.write(serial.to_bytes(value))
+    print(serial.to_bytes(value))   
+
+    time.sleep(2)
+
+    value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
+    ser.write(serial.to_bytes(value))
+    print(serial.to_bytes(value))                 
+
+    state5 = False
+
 # Open the camera
 cap = cv2.VideoCapture(0)
 cap.set(3, 160)
@@ -159,9 +177,8 @@ while True:
     cv2.drawContours(frameBF, BFcontours, -1, (0, 255, 0), 1)
 
     if state1 == True:
-        if len(Ycontours) > 0:
-
-            c = max(Ycontours, key=cv2.contourArea) # find the biggest contour
+        if len(Ycontours) > 0:                                                  # detected yellow line               
+            c = max(Ycontours, key=cv2.contourArea)                             # find the biggest contour
             M = cv2.moments(c)
 
             if M["m00"] != 0:
@@ -173,58 +190,43 @@ while True:
                 cv2.line(Ycrop_img, (0, cy), (1280, cy), (255, 0, 0), 1)
 
                 # using the reference to control the car
-
-                # turn left
                 if cx >= 85 and cy >= 50:
                     value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x00]
                     ser.write(serial.to_bytes(value))
-                    print(serial.to_bytes(value))
-                    print("1")
-
-                # on track, move forward
+                    
                 if cx > 45 and cx < 85:
                     value = [0xFF, 0x00, 0x40, 0x00, 0x01, 0x00]
                     ser.write(serial.to_bytes(value))
-                    print(serial.to_bytes(value))
 
                 if cx <= 30:
                     if cx <= 5 and cy >= 60:
                         value = [0xFF, 0x00, 0x00, 0xC0, 0x01, 0x00]  # turn right
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-                        print("3")
 
                     elif cx <= 10 and cy >= 50:
                         value = [0xFF, 0x48, 0xF9, 0x00, 0x01, 0x00]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-                        print("2")
                     
                     elif cy >= 15:
                         value = [0xFF, 0x48, 0x09, 0x00, 0x01, 0x00]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-                        print ("5")
 
                     else:
                         value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x00]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
         else:
             value = [0xFF, 0x48, 0xF9, 0x00, 0x01, 0x00]
             ser.write(serial.to_bytes(value))
-            print(serial.to_bytes(value))
-            print("4")
 
 
-        if len(Bcontours) > 1:
+        if len(Bcontours) > 1:                                       # detected blue line
 
-            Bc = max(Bcontours, key=cv2.contourArea) # find the biggest contour
+            Bc = max(Bcontours, key=cv2.contourArea)                 # find the biggest contour
             blueArea = cv2.contourArea(Bc)
             print("Blue area= " + str(blueArea))
 
-            if blueArea >= 500 and blueArea <= 3000:
+            if blueArea >= 500 and blueArea <= 3000:                    # if match the criteria, start counter
                 counter = 1
 
             if counter:
@@ -233,28 +235,25 @@ while True:
                     bcounter += 1
                     counter = 0
 
-            if bcounter >= 2:
+            if bcounter >= 2:                                            # if detected blue contours twice
 
                 if blueArea >= 500 and blueArea <= 2200:
                     value = [0xff, 0x00, 0x00, 0x00, 0x01, 0x00]
                     ser.write(serial.to_bytes(value))
-                    print(serial.to_bytes(value))
+
                     time.sleep(5)
                     state1 = False
                     state2 = True
 
             
-
-            print("bcounter =: " + str(bcounter))
-
     if state2 == True:
 
-        if len(blackcontours) != 0:
-            blackc = max(blackcontours, key=cv2.contourArea)        # find the biggest contour (c) by the area
+        if len(blackcontours) != 0:                                    # if black contour (arrow) is not detected
+            blackc = max(blackcontours, key=cv2.contourArea)           # find the biggest contour (c) by the area
             blackarea = cv2.contourArea(blackc)
             print(blackarea)
 
-            if blackarea >= 150:
+            if blackarea >= 150:                                        # Stop when arrow is detected and the area is greater than 150
                 value = [0xff, 0x00, 0x00, 0x00, 0x01, 0x00]
                 ser.write(serial.to_bytes(value))
                 print(serial.to_bytes(value))
@@ -262,7 +261,7 @@ while True:
                 state2 = False
                 state3 = True
 
-        if len(Ycontours) > 0:
+        if len(Ycontours) > 0:                                          # move and follow the yellow line
             if (adjustState2_2 == True):
                 adjustState2_3 = True    
 
@@ -277,7 +276,7 @@ while True:
                 cv2.line(Ycrop_img, (s2cx,0), (s2cx, 720), (255, 0, 0), 1)
                 cv2.line(Ycrop_img, (0, s2cy), (1280, s2cy), (255, 0, 0), 1)
 
-            if adjustState2 == False:
+            if adjustState2 == False:                                    # adjust the car face to yellow line
                 if s2cx >= 90:
                     value = [0xFF, 0x00, 0x00, 0x35, 0x01, 0x00]
                     ser.write(serial.to_bytes(value))
@@ -293,7 +292,7 @@ while True:
                     ser.write(serial.to_bytes(value))
                     print(serial.to_bytes(value))
             
-            if adjustState2_2 == False:
+            if adjustState2_2 == False:                                        # adjustment move due to the uneven ground
                 if s2cx >= 5 and s2cy >= 5:
 
                     value = [0xff, 0xC0, 0x05, 0x00, 0x01, 0x00]
@@ -302,7 +301,7 @@ while True:
                 else:
                     adjustState2_2 = True
 
-            else:
+            else:                                                               # move and follow the yellow line after adjustment move done
                 if s2cx >= 90:
                     if s2cy >= 15:
                         value = [0xff, 0xC0, 0x05, 0x00, 0x01, 0x00]
@@ -334,7 +333,7 @@ while True:
                     ser.write(serial.to_bytes(value))
                     print(serial.to_bytes(value))
         else:
-            if adjustState2_3 == False:
+            if adjustState2_3 == False:                                        # adjustment move due to the uneven ground
                 value = [0xff, 0x00, 0x50, 0x00, 0x01, 0x00]
                 ser.write(serial.to_bytes(value))
                 print(serial.to_bytes(value))
@@ -345,7 +344,7 @@ while True:
   
     if state3 == True:
  
-        if blackarea >= 100:
+        if blackarea >= 100:                                                    # if the detected arrow area is greater than 100 
             if pointSexist == False or pointEexist == False:
                 if len(blackcontours) != 0:
                     # find the biggest contour (c) by the area
@@ -476,7 +475,7 @@ while True:
                                 cv2.imshow('imFiltered', imgFiltered)    
 
 
-                                if pointSexist == True and pointEexist == True:
+                                if pointSexist == True and pointEexist == True:                        # prevent duplicate action
                                     value = [0xff, 0x00, 0x00, 0x00, 0x01, 0x00]
                                     ser.write(serial.to_bytes(value))
                                     print(serial.to_bytes(value))
@@ -495,7 +494,7 @@ while True:
 
 
     if state4 == True:
-        if adjustState4 == False:
+        if adjustState4 == False:                                            # turn the car in the correct driection
             if len(Ycontours)> 0:
                 yc = max(Ycontours, key=cv2.contourArea)
                 yM = cv2.moments(yc)
@@ -517,13 +516,13 @@ while True:
                         print(serial.to_bytes(value))
 
         else:
-            if len(Wcontours)> 0:
+            if len(Wcontours)> 0:                                                # if trohpy is detected
                 wc = max(Wcontours, key=cv2.contourArea)
                 wM = cv2.moments(wc)
                 State4Warea = cv2.contourArea(wc)
                 print("WArea: " + str(State4Warea))
 
-                if State4Warea >= 800:
+                if State4Warea >= 800:                                            # if the detected trophy area is greater than 800, start the counter
                     state4counter = 1
 
                 if state4counter:
@@ -532,7 +531,7 @@ while True:
                         wcounter += 1
                         state4counter = 0
 
-            if len(Ycontours)> 0:
+            if len(Ycontours)> 0:                                                # move until the car in front of the trophy
                 yc = max(Ycontours, key=cv2.contourArea)
                 yM = cv2.moments(yc)
                 State4Yarea = cv2.contourArea(yc)
@@ -592,7 +591,7 @@ while True:
                                 print(serial.to_bytes(value))
 
 
-            if wcounter >= 1:
+            if wcounter >= 1:                                                    # if the trophy is in front of the car, the counter should be 1
                 value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x00]
                 ser.write(serial.to_bytes(value))
                 print(serial.to_bytes(value))
@@ -611,7 +610,7 @@ while True:
 
             if len(BFcontours) <= 0:
 
-                if len(YFcontours) > 0:
+                if len(YFcontours) > 0:                                                            # move according to the yellow border line until meet the blue contour
                     YFc = max(YFcontours, key=cv2.contourArea)
                     YFM = cv2.moments(YFc)
 
@@ -658,8 +657,8 @@ while True:
                             ser.write(serial.to_bytes(value))
                             print(serial.to_bytes(value))
 
-            else:
-                FBc = max(BFcontours, key=cv2.contourArea)
+            else:                                                                                  # move and drop the trophy if the criteria is met
+                FBc = max(BFcontours, key=cv2.contourArea)                                       
                 FblueArea = cv2.contourArea(FBc)
                 # Bx, By, Bw, Bh = cv2.boundingRect(Bc)
                 print("Blue area= " + str(FblueArea))
@@ -683,135 +682,46 @@ while True:
 
                             value = [0xFF, 0x00, 0x00, 0x35, 0x00, 0x02]
                             ser.write(serial.to_bytes(value))
-                            print(serial.to_bytes(value))
-
-
-                        # time.sleep(5)
-                        
-                        # value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        # ser.write(serial.to_bytes(value))
-                        # print(serial.to_bytes(value))
-
-                        # time.sleep(5)
-
-                        # value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        # ser.write(serial.to_bytes(value))
-                        # print(serial.to_bytes(value))
-
-                        # state5 = False
 
                     elif s5Bcx >= 80 and s5Bcx < 90:
 
                         if (s5Bcy >= 65):
                             value = [0xFF, 0x00, 0x00, 0x35, 0x00, 0x02]
                             ser.write(serial.to_bytes(value))
-                            print(serial.to_bytes(value))
-
-
 
                     elif (FblueArea <= 100 and FblueArea > 60):
                             value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                             ser.write(serial.to_bytes(value))
-                            print(serial.to_bytes(value))
 
                     elif (FblueArea < 1 and FblueArea > 0 and s5Bcx <= 40):
                         value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                    # elif (FblueArea <= 10):
-                    #     value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                    #     ser.write(serial.to_bytes(value))
-                    #     print(serial.to_bytes(value))
 
                     elif (FblueArea > 750):
                             if (s5Bcx >= 70):
                                 value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                                 ser.write(serial.to_bytes(value))
-                                print(serial.to_bytes(value))
-
                             else:
                                 value = [0xFF, 0x00, 0x00, 0x35, 0x00, 0x02]
                                 ser.write(serial.to_bytes(value))
-                                print(serial.to_bytes(value))
 
                     elif (s5Bcx <= 10 and s5Bcy >= 100):
                         value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
                     elif (s5Bcx <= 20 and s5Bcy >= 90 and FblueArea <= 200):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))   
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))                 
-
-                        state5 = False
+                         dropTrophy()
 
                     
                     elif (s5Bcx <= 50 and s5Bcy >= 85 and FblueArea <= 120 and FblueArea >= 20):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))   
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))                 
-
-                        state5 = False
-                        # if FblueArea <= 10 and FblueArea >=5:
-
-                        #     value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        #     ser.write(serial.to_bytes(value))
-                        #     print(serial.to_bytes(value))
+                        dropTrophy()
 
                     elif (s5Bcx <= 100 and s5Bcy >= 85 and FblueArea <= 120 and FblueArea >= 20):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))   
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))                 
-
-                        state5 = False
-                        # if FblueArea <= 10 and FblueArea >=5:
-
-                        #     value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        #     ser.write(serial.to_bytes(value))
-                        #     print(serial.to_bytes(value))
+                        dropTrophy()
 
                     else:
                         value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
         if directionR == True:
             if len(BFcontours) <= 0:
@@ -831,33 +741,26 @@ while True:
                     if s5cx >= 60 and s5cx <80 and s5cy >= 40 and s5cy < 70:
                         value = [0xFF, 0x38, 0x00, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
                     elif (s5cx <= 55 and s5cy >= 50):
                         value = [0xFF, 0x00, 0x00, 0xC0, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
                     elif (s5cx >= 80 and s5cy >= 70):
                         value = [0xFF, 0x00, 0x00, 0xC0, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
                     elif (s5cx >= 70 and s5cy <= 30):
                         value = [0xFF, 0x00, 0x00, 0xC0, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
                     elif (s5cx <= 10 and s5cy <= 50):
                         value = [0xFF, 0x00, 0x00, 0xC0, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
 
                     else:
                         value = [0xFF, 0x38, 0x00, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
 
             else:
                 FBc = max(BFcontours, key=cv2.contourArea)
@@ -876,143 +779,40 @@ while True:
                     cv2.line(frameYF, (0, s5Bcy), (1280, s5Bcy), (255, 0, 0), 1)
 
                     if (s5Bcx <= 15 and s5Bcy <= 45):
-
                         value = [0xFF, 0x40, 0x00, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))     
-                        print("F1")   
 
                     elif (s5Bcx <= 20 and s5Bcx >5 and s5Bcy <= 100 and s5Bcy >= 98 and FblueArea <= 370):            
                         value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))  
-                        print("F2")  
 
                     elif (s5Bcx <= 20 and s5Bcx >5 and s5Bcy <= 100 and s5Bcy >= 80):            
                         value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-                        print("F3")     
 
                     elif (s5Bcx <= 20 and s5Bcx >5 and s5Bcy <= 100 and s5Bcy >= 80):            
                         value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-                        print("F4")    
 
                     elif (s5Bcx <= 15 and s5Bcx >5 and s5Bcy <= 107 and FblueArea <= 150):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        state5 = False
+                        dropTrophy()
 
                     elif (s5Bcx <= 20 and s5Bcx >5 and s5Bcy <= 100 and s5Bcy >= 98 and FblueArea <= 370):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        state5 = False
+                        dropTrophy()
 
                     elif (s5Bcx >= 145 and s5Bcy >= 95 and FblueArea <= 300):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        state5 = False
+                        dropTrophy()
 
                     elif (s5Bcx <= 136 and s5Bcx >= 10 and s5Bcy >= 10 and s5Bcy <= 110 and FblueArea <= 100 and FblueArea >= 10):
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        time.sleep(2)
-
-                        value = [0xFF, 0x00, 0x00, 0x00, 0x01, 0x01]
-                        ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-
-                        state5 = False
+                        dropTrophy()
 
                     elif (s5Bcx >= 23 and s5Bcx < 150 and s5Bcy >= 5 and s5Bcy < 120):
                         value = [0xFF, 0x00, 0x35, 0x00, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))     
-                        print("F5")   
 
                     else:
                         value = [0xFF, 0x00, 0x00, 0xC0, 0x00, 0x02]
                         ser.write(serial.to_bytes(value))
-                        print(serial.to_bytes(value))
-                        print("F6")  
-
-
-                    # value = [0xFF, 0x00, 0x00, 0x00, 0x00, 0x02]
-                    # ser.write(serial.to_bytes(value))
-                    # print(serial.to_bytes(value))
-                    
-
-
-    # cv2.imshow('Yimage - mask', Ymask)
-    # cv2.imshow('Yimage', Ycrop_img)
-    # cv2.imshow('Bimage - mask', Bmask)
-    # cv2.imshow('Bimage', Bcrop_img)
-    # cv2.imshow('WhiteMask', Wmask)
-    # cv2.imshow('Whiteimage', frameW)
-    # cv2.imshow('arrowimage', blackMask)
-    cv2.imshow('State5 image', frameYF)
-    cv2.imshow('Final blue image', BFmask)
-    
-
-    # print("wcounter: " + str(wcounter))
-    # print("Right: " + str(directionR))
-    # print("Left: " + str(directionL))
-
-    # if cv2.waitKey (1) & 0xff == 'q':
-    #     value = [0xff, 0x00, 0x00, 0x00, 0x00, 0x00]
-    #     ser.write(serial.to_bytes(value))
 
     if cv2.waitKey (1) & 0xff == 27:
         break
